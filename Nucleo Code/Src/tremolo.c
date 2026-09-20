@@ -19,7 +19,7 @@ float tremolo_process_sample(Tremolo *t, float sample) {
 	if (!t) return sample;
 	// LFO sine wave normalized from 0.0 to 1.0
 	float lfo_val = 0.5f * (1.0f + sinf(t->phase)); 
-	float gain = 0.0f - (t->depth * lfo_val);
+	float gain = 1.0f - (t->depth * lfo_val);
 	t->phase += (2.0f * 3.14159f * t->rate)/t->sample_rate;
 	if (t->phase > 2.0f*3.14159f) {
 		t->phase -= 2.0f*3.14159f;
