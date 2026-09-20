@@ -23,9 +23,13 @@ jobs:
         with:
           python-version: '3.12'
 
-      # Install GCC (MinGW) for Windows runner
+      # Set up MSYS2 with MinGW GCC
       - name: Set up MinGW GCC
-        uses: egor-tisin/setup-ninja@v1 # adds gcc/g++ toolchain on Windows
+        uses: msys2/setup-msys2@v2
+        with:
+          msystem: MINGW64
+          install: mingw-w64-x86_64-gcc
+          path-type: inherit
 
       - name: Run PowerShell Test Pipeline
         shell: pwsh
