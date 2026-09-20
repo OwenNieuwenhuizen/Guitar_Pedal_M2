@@ -1,0 +1,32 @@
+name: CFFI DSP Pipeline CI
+
+on:
+  push:
+    branches:
+      - master
+  pull_request:
+    branches:
+      - master
+
+jobs:
+  test:
+    runs-on: windows-latest
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: 'pip'
+
+      - name: Set up MSVC Compiler
+        uses: ilammy/msvc-dev-cmd@v1
+
+      - name: Run PowerShell Test Pipeline
+        shell: pwsh
+        run: |
+          Set-ExecutionPolicy -ExecutionPolicy Unrestricted -Scope Process
+          .\run_tests.ps1
