@@ -4,9 +4,11 @@ on:
   push:
     branches:
       - master
+      - main
   pull_request:
     branches:
       - master
+      - main
 
 jobs:
   test:
@@ -20,10 +22,10 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: '3.12'
-          cache: 'pip'
 
-      - name: Set up MSVC Compiler
-        uses: ilammy/msvc-dev-cmd@v1
+      # Install GCC (MinGW) for Windows runner
+      - name: Set up MinGW GCC
+        uses: egor-tisin/setup-ninja@v1 # adds gcc/g++ toolchain on Windows
 
       - name: Run PowerShell Test Pipeline
         shell: pwsh
