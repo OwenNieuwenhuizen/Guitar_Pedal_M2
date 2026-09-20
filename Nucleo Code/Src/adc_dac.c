@@ -61,13 +61,17 @@ void Audio_ADC_DAC_Init(void) {
     /* -------------------------------------------------------------------------
      * 4. Configure DAC Channel 1 (PA4 Output)
      * ------------------------------------------------------------------------- */
-    DAC->CR &= ~(1U << 0); /* Disable DAC Ch1 during config */
-    DAC->CR &= ~(1U << 2); /* Disable Trigger (TEN1 = 0) for direct DHR writes */
-    DAC->CR &= ~(1U << 1); /* Enable Output Buffer (BOFF1 = 0) */
-    DAC->CR |=  (1U << 0); /* Enable DAC Channel 1 */
+    DAC->CR &= ~(1U << 0);          /* Disable DAC Ch1 during config */
+    DAC->CR &= ~((7U << 3) | (1U << 12));
+    DAC->CR |=  (4U << 3);          /* TSEL1: TIM2 TRGO */
+    DAC->CR &= ~(1U << 1);          /* Enable output buffer (BOFF1 = 0) */
+    DAC->CR |=  (1U << 2);          /* Enable trigger */
+    DAC->CR |=  (1U << 12);         /* Enable DMA requests */
+    DAC->DHR12R1 = 2048U;
+    DAC->CR |=  (1U << 0);          /* Enable DAC Channel 1 */
 }
 
 void DAC1_WriteSample(uint16_t sample) {
     /* Write 12-bit right-aligned data directly to DAC Channel 1 */
-    DAC->DHR12R1 = sample;
+    DAC->DHR12R1 = sample & 0x0FFFU;
 }

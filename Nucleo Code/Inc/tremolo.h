@@ -11,6 +11,6 @@
 #include <math.h>
 #include <stdint.h>
 
-int16_t tremolo_process_samp(float samp);
+float tremolo_process_samp(float samp);
 
 #endif /* TREMOLO_H_ */

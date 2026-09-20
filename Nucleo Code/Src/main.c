@@ -41,13 +41,23 @@ void Process_cmd(const char *cmd);
 #define BLOCK_SIZE 256U
 static uint16_t adc_ping_buf[BLOCK_SIZE];
 static uint16_t adc_pong_buf[BLOCK_SIZE];
-static volatile uint8_t audio_frame_ready = 0;
+static uint16_t dac_ping_buf[BLOCK_SIZE];
+static uint16_t dac_pong_buf[BLOCK_SIZE];
+static volatile uint8_t adc_frame_ready = 0;
+static volatile uint8_t dac_frame_ready = 0;
 static uint16_t *volatile active_processing_buf = NULL;
+static uint16_t *volatile available_output_buf = NULL;
 
 void AudioBlock_Ready_Callback(uint16_t *buffer) {
     /* Hand off the filled inactive buffer to the main execution loop */
     active_processing_buf = buffer;
-    audio_frame_ready = 1;
+    adc_frame_ready = 1;
+}
+
+void DACBlock_Ready_Callback(uint16_t *buffer) {
+    /* The completed inactive DAC buffer is safe for the next DSP result. */
+    available_output_buf = buffer;
+    dac_frame_ready = 1;
 }
 
 int main(void)
@@ -57,14 +67,20 @@ int main(void)
     Audio_ADC_DAC_Init();
 //    USART3_Init();
     DMA2_Stream0_ADC_Init(adc_ping_buf, adc_pong_buf, BLOCK_SIZE, AudioBlock_Ready_Callback);
+    for (uint32_t i = 0; i < BLOCK_SIZE; i++) {
+        dac_ping_buf[i] = 2048U;
+        dac_pong_buf[i] = 2048U;
+    }
+    DMA1_Stream5_DAC_Init(dac_ping_buf, dac_pong_buf, BLOCK_SIZE, DACBlock_Ready_Callback);
     TIM2_SampleClock_Init(SAMPLE_RATE_HZ);
     while(1) {
-    	if (audio_frame_ready) {
-			audio_frame_ready = 0;
+    	if (adc_frame_ready && dac_frame_ready) {
+			adc_frame_ready = 0;
+			dac_frame_ready = 0;
 
 			/* Process 256-sample audio frame in real time */
-			if (active_processing_buf != NULL) {
-				process_audio_frame(active_processing_buf, BLOCK_SIZE);
+			if (active_processing_buf != NULL && available_output_buf != NULL) {
+				process_audio_frame(active_processing_buf, available_output_buf, BLOCK_SIZE);
 			}
 		}
     }

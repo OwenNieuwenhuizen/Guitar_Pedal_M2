@@ -1,0 +1,201 @@
+Edited 6 files (+90 -19)
+  └ Nucleo Code\Inc\dma.h (+4 -2)
+    13
+    14 -void DMA2_Stream0_ADC_Init(uint16_t *buf0, uint16_t *buf1, uint16_t block_size, void (*cb)(uint16_t *));
+    15 -void DMA2_Stream0_IRQHandler(void);
+    14 +void DMA2_Stream0_ADC_Init(uint16_t *buf0, uint16_t *buf1, uint16_t block_size, void (*cb)(uint16_t *));
+    15 +void DMA2_Stream0_IRQHandler(void);
+    16 +void DMA1_Stream5_DAC_Init(uint16_t *buf0, uint16_t *buf1, uint16_t block_size, void (*cb)(uint16_t *));
+    17 +void DMA1_Stream5_IRQHandler(void);
+    18
+
+  └ Nucleo Code\Inc\tremolo.h (+1 -1)
+    13
+    14 -int16_t tremolo_process_samp(float samp);
+    14 +float tremolo_process_samp(float samp);
+    15
+
+  └ Nucleo Code\Src\adc_dac.c (+9 -5)
+    63       * ------------------------------------------------------------------------- */
+    64 -    DAC->CR &= ~(1U << 0); /* Disable DAC Ch1 during config */
+    65 -    DAC->CR &= ~(1U << 2); /* Disable Trigger (TEN1 = 0) for direct DHR writes */
+    66 -    DAC->CR &= ~(1U << 1); /* Enable Output Buffer (BOFF1 = 0) */
+    67 -    DAC->CR |=  (1U << 0); /* Enable DAC Channel 1 */
+    64 +    DAC->CR &= ~(1U << 0);          /* Disable DAC Ch1 during config */
+    65 +    DAC->CR &= ~((7U << 3) | (1U << 12));
+    66 +    DAC->CR |=  (4U << 3);          /* TSEL1: TIM2 TRGO */
+    67 +    DAC->CR &= ~(1U << 1);          /* Enable output buffer (BOFF1 = 0) */
+    68 +    DAC->CR |=  (1U << 2);          /* Enable trigger */
+    69 +    DAC->CR |=  (1U << 12);         /* Enable DMA requests */
+    70 +    DAC->DHR12R1 = 2048U;
+    71 +    DAC->CR |=  (1U << 0);          /* Enable DAC Channel 1 */
+    72  }
+       ⋮
+    75      /* Write 12-bit right-aligned data directly to DAC Channel 1 */
+    72 -    DAC->DHR12R1 = sample;
+    76 +    DAC->DHR12R1 = sample & 0x0FFFU;
+    77  }
+
+  └ Nucleo Code\Src\dma.c (+53 -4)
+     10
+     11 -static void (*dma_adc_callback)(uint16_t *buffer) = NULL;
+     11 +static void (*dma_adc_callback)(uint16_t *buffer) = NULL;
+     12 +static void (*dma_dac_callback)(uint16_t *buffer) = NULL;
+     13
+        ⋮
+     52
+     52 -void DMA2_Stream0_IRQHandler(void) {
+     53 +void DMA2_Stream0_IRQHandler(void) {
+     54      /* Check TCIF0 (Bit 5 in LISR) */
+        ⋮
+     66          }
+     66 -    }
+     67 -}
+     67 +    }
+     68 +}
+     69 +
+     70 +void DMA1_Stream5_DAC_Init(uint16_t *buf0, uint16_t *buf1, uint16_t block_size, void (*cb)(uint16_t *)) {
+     71 +    dma_dac_callback = cb;
+     72 +
+     73 +    /* Enable DMA1 clock (AHB1ENR bit 21). */
+     74 +    RCC->AHB1ENR |= (1U << 21);
+     75 +
+     76 +    /* Disable Stream 5 before changing its configuration. */
+     77 +    DMA1->Stream[5].CR &= ~(1U << 0);
+     78 +    while (DMA1->Stream[5].CR & (1U << 0)) {}
+     79 +
+     80 +    /* Clear all Stream 5 status flags in the high interrupt flag register. */
+     81 +    DMA1->HIFCR = 0x0F40U;
+     82 +
+     83 +    DMA1->Stream[5].PAR = (uint32_t)&DAC->DHR12R1;
+     84 +    DMA1->Stream[5].M0AR = (uint32_t)buf0;
+     85 +    DMA1->Stream[5].M1AR = (uint32_t)buf1;
+     86 +    DMA1->Stream[5].NDTR = block_size;
+     87 +
+     88 +    /*
+     89 +     * CHSEL = 7, DIR = memory-to-peripheral, double-buffered circular mode,
+     90 +     * and 16-bit peripheral/memory accesses for 12-bit DAC samples.
+     91 +     */
+     92 +    DMA1->Stream[5].CR = (7U << 25) | (1U << 18) | (1U << 14) |
+     93 +                         (1U << 11) | (1U << 10) | (1U << 8) |
+     94 +                         (1U << 6) | (1U << 4);
+     95 +
+     96 +    /* DMA1 Stream 5 is IRQ 16. */
+     97 +    NVIC->ISER[16U >> 5] |= (1U << (16U % 32));
+     98 +
+     99 +    DMA1->Stream[5].CR |= (1U << 0);
+    100 +}
+    101 +
+    102 +void DMA1_Stream5_IRQHandler(void) {
+    103 +    /* TCIF5 is bit 11 in DMA1_HISR/HIFCR. */
+    104 +    if (DMA1->HISR & (1U << 11)) {
+    105 +        DMA1->HIFCR = (1U << 11);
+    106 +
+    107 +        /* CT identifies the active target; the other buffer is safe to refill. */
+    108 +        uint16_t *ready_buf = (DMA1->Stream[5].CR & (1U << 19)) ?
+    109 +                              (uint16_t *)DMA1->Stream[5].M0AR :
+    110 +                              (uint16_t *)DMA1->Stream[5].M1AR;
+    111 +
+    112 +        if (dma_dac_callback) {
+    113 +            dma_dac_callback(ready_buf);
+    114 +        }
+    115 +    }
+    116 +}
+
+  └ Nucleo Code\Src\main.c (+22 -6)
+    43  static uint16_t adc_pong_buf[BLOCK_SIZE];
+    44 -static volatile uint8_t audio_frame_ready = 0;
+    44 +static uint16_t dac_ping_buf[BLOCK_SIZE];
+    45 +static uint16_t dac_pong_buf[BLOCK_SIZE];
+    46 +static volatile uint8_t adc_frame_ready = 0;
+    47 +static volatile uint8_t dac_frame_ready = 0;
+    48  static uint16_t *volatile active_processing_buf = NULL;
+    49 +static uint16_t *volatile available_output_buf = NULL;
+    50
+       ⋮
+    53      active_processing_buf = buffer;
+    50 -    audio_frame_ready = 1;
+    54 +    adc_frame_ready = 1;
+    55 +}
+    56 +
+    57 +void DACBlock_Ready_Callback(uint16_t *buffer) {
+    58 +    /* The completed inactive DAC buffer is safe for the next DSP result. */
+    59 +    available_output_buf = buffer;
+    60 +    dac_frame_ready = 1;
+    61  }
+       ⋮
+    69      DMA2_Stream0_ADC_Init(adc_ping_buf, adc_pong_buf, BLOCK_SIZE, AudioBlock_Ready_Callback);
+    70 +    for (uint32_t i = 0; i < BLOCK_SIZE; i++) {
+    71 +        dac_ping_buf[i] = 2048U;
+    72 +        dac_pong_buf[i] = 2048U;
+    73 +    }
+    74 +    DMA1_Stream5_DAC_Init(dac_ping_buf, dac_pong_buf, BLOCK_SIZE, DACBlock_Ready_Callback);
+    75      TIM2_SampleClock_Init(SAMPLE_RATE_HZ);
+    76      while(1) {
+    62 -        if (audio_frame_ready) {
+    63 -            audio_frame_ready = 0;
+    77 +        if (adc_frame_ready && dac_frame_ready) {
+    78 +            adc_frame_ready = 0;
+    79 +            dac_frame_ready = 0;
+    80
+    81              /* Process 256-sample audio frame in real time */
+    66 -            if (active_processing_buf != NULL) {
+    67 -                process_audio_frame(active_processing_buf, BLOCK_SIZE);
+    82 +            if (active_processing_buf != NULL && available_output_buf != NULL) {
+    83 +                process_audio_frame(active_processing_buf, available_output_buf, BLOCK_SIZE);
+    84              }
+
+  └ Nucleo Code\Src\tremolo.c (+1 -1)
+    14
+    15 -int16_t tremolo_process_samp(float samp) {
+    15 +float tremolo_process_samp(float samp) {
+    16      float lfo_f = 0.5f * (sinf(g_tremolo_phase)+1.0f);
+
+• The patch utility stalled without returning a result, so I stopped it to avoid an indefinite hang. I’ll now inspect
+  the source state; if nothing was changed, the filesystem layer is still preventing implementation.
+
+• Ran git diff -- "Nucleo Code/Src" "Nucleo Code/Inc"; git status --short
+  └ warning: in the working copy of 'Nucleo Code/Src/sysmem.c', LF will be replaced by CRLF the next time Git touches it
+    warning: in the working copy of 'Nucleo Code/Src/syscalls.c', LF will be replaced by CRLF the next time Git touches
+    … +1447 lines (ctrl + t to view transcript)
+
+        git config --global --add safe.directory C:/Users/owenn/OneDrive/Documents/FW_proj
+
+• Ran Get-ChildItem -LiteralPath 'Nucleo Code\Src' -Force | Select-Object Name,Length,LastWriteTime; Get-ChildItem
+  │ -LiteralPath 'Nucleo Code\Inc' -Force | Select-Object Name,Length,LastWriteTime
+  └
+    Name            Length LastWriteTime
+    … +23 lines (ctrl + t to view transcript)
+
+
+
+• Ran Get-Content -LiteralPath 'Nucleo Code\Inc\dma.h'; Get-Content -LiteralPath 'Nucleo Code\Inc\tremolo.h';
+  │ Get-Content -LiteralPath 'Nucleo Code\Src\tremolo.c'
+  └ /*
+     * dma.h
+    … +54 lines (ctrl + t to view transcript)
+        return samp*gain;
+    }
+
+• Only the first header edit completed before the patch utility stalled; the source files are intact. I’ll apply the
+  remaining changes one file at a time to avoid that lock-up.
+
+⚠ Heads up, you have less than 25% of your monthly limit left. Run /status for a breakdown.
+
+• Edited 2 files (+2 -2)
+  └ Nucleo Code\Inc\tremolo.h (+1 -1)
+    13
+    14 -int16_t tremolo_process_samp(float samp);
+    14 +float tremolo_process_samp(float samp);
+    15
+
+  └ Nucleo Code\Src\tremolo.c (+1 -1)
+    14
+    15 -int16_t tremolo_process_samp(float samp) {
+    15 +float tremolo_process_samp(float samp) {
+    16      float lfo_f = 0.5f * (sinf(g_tremolo_phase)+1.0f);
+
+• Ran Select-String -LiteralPath 'Nucleo Code\Inc\tremolo.h','Nucleo Code\Src\tremolo.c' -Pattern 'tremolo_process_samp'
+  └
+    Nucleo Code\Inc\tremolo.h:14:int16_t tremolo_process_samp(float samp);
+    Nucleo Code\Src\tremolo.c:15:int16_t tremolo_process_samp(float samp) {

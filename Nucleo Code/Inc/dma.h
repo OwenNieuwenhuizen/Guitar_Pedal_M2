@@ -13,5 +13,7 @@
 
 void DMA2_Stream0_ADC_Init(uint16_t *buf0, uint16_t *buf1, uint16_t block_size, void (*cb)(uint16_t *));
 void DMA2_Stream0_IRQHandler(void);
+void DMA1_Stream5_DAC_Init(uint16_t *buf0, uint16_t *buf1, uint16_t block_size, void (*cb)(uint16_t *));
+void DMA1_Stream5_IRQHandler(void);
 
 #endif /* DMA_H_ */
