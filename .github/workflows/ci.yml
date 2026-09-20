@@ -16,14 +16,13 @@ jobs:
 
     steps:
       - name: Check out repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Set up Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v6
         with:
           python-version: '3.12'
 
-      # Set up MSYS2 with MinGW GCC
       - name: Set up MinGW GCC
         uses: msys2/setup-msys2@v2
         with:
