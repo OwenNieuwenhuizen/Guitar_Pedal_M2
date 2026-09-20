@@ -1,0 +1,6 @@
+../Src/gpio.c:10:6:GPIO_ClockEnable	9
+../Src/gpio.c:21:6:GPIO_Init	1
+../Src/gpio.c:27:6:GPIO_SetFunct	2
+../Src/gpio.c:38:6:GPIO_WritePin	2
+../Src/gpio.c:46:9:GPIO_ReadPin	1
+../Src/gpio.c:50:6:GPIO_TogglePin	2

@@ -1,0 +1,2 @@
+../Src/adc_dac.c:13:6:Audio_ADC_DAC_Init	1
+../Src/adc_dac.c:70:6:DAC1_WriteSample	1

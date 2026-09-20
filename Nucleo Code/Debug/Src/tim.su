@@ -1,0 +1,3 @@
+../Src/tim.c:14:6:USART3_DMA1_TIM2_Telemetry_Init	16	static
+../Src/tim.c:28:6:TIM2_SampleClock_Init	16	static
+../Src/tim.c:40:6:TIM2_IRQHandler	8	static
