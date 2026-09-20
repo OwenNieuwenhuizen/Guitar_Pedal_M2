@@ -47,6 +47,7 @@ static volatile uint8_t adc_frame_ready = 0;
 static volatile uint8_t dac_frame_ready = 0;
 static uint16_t *volatile active_processing_buf = NULL;
 static uint16_t *volatile available_output_buf = NULL;
+static AudioPipeline g_pipeline;
 
 void AudioBlock_Ready_Callback(uint16_t *buffer) {
     /* Hand off the filled inactive buffer to the main execution loop */
@@ -73,6 +74,7 @@ int main(void)
     }
     DMA1_Stream5_DAC_Init(dac_ping_buf, dac_pong_buf, BLOCK_SIZE, DACBlock_Ready_Callback);
     TIM2_SampleClock_Init(SAMPLE_RATE_HZ);
+    audio_pipeline_init(&g_pipeline, SAMPLE_RATE_HZ);
     while(1) {
     	if (adc_frame_ready && dac_frame_ready) {
 			adc_frame_ready = 0;
@@ -80,7 +82,7 @@ int main(void)
 
 			/* Process 256-sample audio frame in real time */
 			if (active_processing_buf != NULL && available_output_buf != NULL) {
-				process_audio_frame(active_processing_buf, available_output_buf, BLOCK_SIZE);
+				audio_pipeline_process_12bit(&g_pipeline, active_processing_buf, available_output_buf, BLOCK_SIZE);
 			}
 		}
     }

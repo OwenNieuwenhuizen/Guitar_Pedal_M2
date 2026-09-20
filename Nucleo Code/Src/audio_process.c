@@ -8,27 +8,39 @@
 #include "audio_process.h"
 #include <stdint.h>
 
-static float audio_gain = 1.0f;
+void audio_pipeline_init(AudioPipeline *pipeline, float sample_rate) {
+	if (!pipeline) return;
+	pipeline->master_gain = 1.0f;
+	tremolo_init(&pipeline->tremolo, 0.8f, 7.0f, sample_rate);
+}
 
-void process_audio_frame(uint16_t *in_buffer, uint16_t *out_buffer, uint32_t length) {
+/* Float-native processing for direct Python streaming & testing */
+void audio_pipeline_process_float(AudioPipeline *pipeline, const float *in_buf, float *out_buf, uint32_t length) {
     for (uint32_t i = 0; i < length; i++) {
-        /* 1. Extract 12-bit raw sample (0 to 4095) */
-        uint16_t raw_adc = in_buffer[i];
+        float sample = in_buf[i];
 
-        /* 2. Convert to normalized float range [-1.0f, +1.0f]
-         *    assuming a mid-rail 1.65V DC bias (~2048 counts) */
-        float float_sample = ((float)raw_adc - 2048.0f) / 2048.0f;
+        /* Effect Chain Execution */
+        sample = tremolo_process_sample(&pipeline->tremolo, sample);
+        sample = sample * pipeline->master_gain;
 
-        float_sample = tremolo_process_samp(float_sample);
+        /* Hard-clipping protection [-1.0, +1.0] */
+        if (sample > 1.0f)  sample = 1.0f;
+        if (sample < -1.0f) sample = -1.0f;
 
-        /* 3. Execute DSP Algorithm (Hardware FPU acceleration) */
-        float_sample = float_sample * audio_gain;
+        out_buf[i] = sample;
+    }
+}
 
-        /* Soft-clipping protection */
-        if (float_sample > 1.0f)  float_sample = 1.0f;
-        if (float_sample < -1.0f) float_sample = -1.0f;
+/* 12-bit ADC/DAC conversion wrapper (used by STM32 bare-metal main) */
+void audio_pipeline_process_12bit(AudioPipeline *pipeline, const uint16_t *in_buf, uint16_t *out_buf, uint32_t length) {
+    for (uint32_t i = 0; i < length; i++) {
+        /* Convert 12-bit unsigned ADC (0-4095) to float [-1.0, +1.0] */
+        float float_in = ((float)in_buf[i] - 2048.0f) / 2048.0f;
+        float float_out = 0.0f;
 
-        /* 4. Convert float back to 12-bit unsigned output (0 to 4095) */
-        out_buffer[i] = (uint16_t)((float_sample * 2048.0f) + 2048.0f);
+        audio_pipeline_process_float(pipeline, &float_in, &float_out, 1);
+
+        /* Convert float back to 12-bit DAC (0-4095) */
+        out_buf[i] = (uint16_t)((float_out * 2048.0f) + 2048.0f);
     }
 }

@@ -1,2 +1,4 @@
-../Src/dma.c:13:6:DMA2_Stream0_ADC_Init	2
-../Src/dma.c:52:6:DMA2_Stream0_IRQHandler	4
+../Src/dma.c:14:6:DMA2_Stream0_ADC_Init	2
+../Src/dma.c:53:6:DMA2_Stream0_IRQHandler	4
+../Src/dma.c:70:6:DMA1_Stream5_DAC_Init	2
+../Src/dma.c:102:6:DMA1_Stream5_IRQHandler	4

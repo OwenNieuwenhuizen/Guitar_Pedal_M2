@@ -1,0 +1,12 @@
+# Testing Framework
+pytest>=8.0.0
+
+# C Foreign Function Interface for dynamic library binding
+cffi>=1.16.0
+
+# Digital Signal Processing & Numerical Analysis
+numpy>=1.26.0
+
+# Audio Processing & Plotting (Optional - for WAV analysis & DSP visualization)
+scipy>=1.12.0
+matplotlib>=3.8.0

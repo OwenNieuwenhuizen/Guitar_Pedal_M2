@@ -7,17 +7,22 @@
 
 #include "tremolo.h"
 
-static float g_tremolo_depth = 0.8f;
-static float g_tremolo_rate = 7.0f;
-static float g_tremolo_freq = 48000.0f;
-static float g_tremolo_phase = 0.0f;
+void tremolo_init(Tremolo *t, float depth, float rate, float sample_rate) {
+	if (!t) return;
+	t->depth = depth;
+	t->rate = rate;
+	t->sample_rate = sample_rate;
+	t->phase = 0.0f;
+}
 
-float tremolo_process_samp(float samp) {
-	float lfo_f = 0.5f * (sinf(g_tremolo_phase)+1.0f);
-	float gain = (1.0f-g_tremolo_depth)+(g_tremolo_depth*lfo_f);
-	g_tremolo_phase += (2.0f * 3.14159f * g_tremolo_rate)/g_tremolo_freq;
-	if (g_tremolo_phase > 2.0f*3.14159f) {
-		g_tremolo_phase -= 2.0f*3.14159f;
+float tremolo_process_sample(Tremolo *t, float sample) {
+	if (!t) return sample;
+	// LFO sine wave normalized from 0.0 to 1.0
+	float lfo_val = 0.5f * (1.0f + sinf(t->phase)); 
+	float gain = 1.0f - (t->depth * lfo_val);
+	t->phase += (2.0f * 3.14159f * t->rate)/t->sample_rate;
+	if (t->phase > 2.0f*3.14159f) {
+		t->phase -= 2.0f*3.14159f;
 	}
-	return samp*gain;
+	return sample*gain;
 }

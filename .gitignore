@@ -14,3 +14,20 @@ Release/
 *.map
 *.bin
 *.hex
+*.obj
+*.so
+*.dll
+*.exe
+build/
+bin/
+
+# Python virtual environments & dependencies
+venv/
+.venv/
+env/
+__pycache__/
+*.pyc
+
+# IDE / Editor configuration folders
+.vscode/
+.idea/

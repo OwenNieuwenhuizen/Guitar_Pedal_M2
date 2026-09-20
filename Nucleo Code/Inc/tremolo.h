@@ -11,6 +11,14 @@
 #include <math.h>
 #include <stdint.h>
 
-float tremolo_process_samp(float samp);
+typedef struct {
+	float depth;
+	float rate;
+	float sample_rate;
+	float phase;
+} Tremolo;
+
+void tremolo_init(Tremolo *t, float depth, float rate, float sample_rate);
+float tremolo_process_sample(Tremolo *t, float samp);
 
 #endif /* TREMOLO_H_ */

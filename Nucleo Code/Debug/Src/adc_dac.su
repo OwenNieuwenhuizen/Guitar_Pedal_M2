@@ -1,2 +1,2 @@
 ../Src/adc_dac.c:13:6:Audio_ADC_DAC_Init	8	static
-../Src/adc_dac.c:70:6:DAC1_WriteSample	16	static
+../Src/adc_dac.c:74:6:DAC1_WriteSample	16	static
