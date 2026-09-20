@@ -32,6 +32,7 @@ jobs:
 
       - name: Run PowerShell Test Pipeline
         shell: pwsh
+        working-directory: ./Automated Test Harness
         run: |
           Set-ExecutionPolicy -ExecutionPolicy Unrestricted -Scope Process
           .\run_tests.ps1
