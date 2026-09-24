@@ -1,1 +1,2 @@
-../Src/tremolo.c:15:7:tremolo_process_samp	2
+../Src/tremolo.c:10:6:tremolo_init	2
+../Src/tremolo.c:18:7:tremolo_process_sample	3

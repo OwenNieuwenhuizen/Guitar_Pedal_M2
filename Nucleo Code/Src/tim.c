@@ -23,25 +23,35 @@ void USART3_DMA1_TIM2_Telemetry_Init(const char *buffer, uint16_t length) {
 	TIM2->CR1 |= 1U<<0;
 }
 
-#include "registers.h"
-
 void TIM2_SampleClock_Init(uint32_t sampling_rate_hz) {
     RCC->APB1ENR |= (1U << 0);
+
+    /* Stop timer */
     TIM2->CR1 &= ~(1U << 0);
+
     TIM2->PSC = 0U;
     TIM2->ARR = (108000000U / sampling_rate_hz) - 1U;
+
+    /* MMS [6:4] = 010 (Update event used as TRGO) */
     TIM2->CR2 &= ~(7U << 4);
     TIM2->CR2 |=  (2U << 4);
+
+    /* Force update to dump prescaler & reset TRGO line state */
     TIM2->EGR |= (1U << 0);
     TIM2->SR = 0U;
+
+    /* Start timer */
     TIM2->CR1 |= (1U << 0);
 }
 
+#include "usart.h"
+static volatile uint32_t tim2_trgo_count = 0;
 void TIM2_IRQHandler(void) {
 	if (TIM2->SR & (1U << 0)) {
 		TIM2->SR &= ~(1U << 0);
-		if (telemetry_buf_ptr && telemetry_len > 0) {
-			USART3_TransmitDMA(telemetry_buf_ptr, telemetry_len);
+		tim2_trgo_count++;
+		if (tim2_trgo_count % 48000U == 0) {
+			USART3_WriteStr("Trigger");
 		}
 	}
 }

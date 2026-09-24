@@ -181,7 +181,7 @@ typedef struct {
 	ADCN_TypeDef ADC1;
 	uint32_t RESERVED0 [44];
 	ADCN_TypeDef ADC2;
-	uint32_t RESERVED1 [58];
+	uint32_t RESERVED1 [44];
 	ADCN_TypeDef ADC3;
 	uint32_t RESERVED2 [44];
 	volatile uint32_t CSR;

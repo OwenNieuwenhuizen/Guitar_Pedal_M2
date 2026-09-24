@@ -18,8 +18,8 @@ void DMA2_Stream0_ADC_Init(uint16_t *buf0, uint16_t *buf1, uint16_t block_size, 
     RCC->AHB1ENR |= (1U << 22);
 
     /* Disable Stream 0 */
-    DMA2->Stream[0].CR &= ~(1U << 0);
-    while (DMA2->Stream[0].CR & (1U << 0));
+    DMA2->Stream[0].CR &= ~1U;
+    while (DMA2->Stream[0].CR & 1U);
 
     /* Clear Stream 0 Interrupt Flags in Low Interrupt Flag Clear Register */
     DMA2->LIFCR |= 0x3DU;
@@ -52,8 +52,9 @@ void DMA2_Stream0_ADC_Init(uint16_t *buf0, uint16_t *buf1, uint16_t block_size, 
 
 void DMA2_Stream0_IRQHandler(void) {
     /* Check TCIF0 (Bit 5 in LISR) */
+//	Transfer complete, then clear flag and read data in to buf
     if (DMA2->LISR & (1U << 5)) {
-        DMA2->LIFCR |= (1U << 5); /* Clear TCIF0 */
+    	DMA2->LIFCR = (0x3DU << 0);
 
         /* CT bit (Bit 19) in CR indicates which buffer DMA is currently targeting.
          * If CT == 1, DMA is actively writing to M1AR, so M0AR is ready for processing. */

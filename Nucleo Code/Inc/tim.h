@@ -9,6 +9,7 @@
 #define TIM_H_
 
 #include "usart.h"
+#include "registers.h"
 
 void USART3_DMA1_TIM2_Telemetry_Init(const char *buffer, uint16_t length);
 void TIM2_SampleClock_Init(uint32_t sampling_rate_hz);
