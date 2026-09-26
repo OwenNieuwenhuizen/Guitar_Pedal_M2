@@ -36,10 +36,9 @@ void Audio_ADC_Init(void) {
 	ADC->ADC1.SQR1 = 0;
 	ADC->ADC1.SQR3 = 0;
 
-	/* Sample Time: 56 cycles for Channel 0 (SMPR2 [2:0] = 011)
-	 * Prevents OVR flag collisions at high sampling rates */
-	ADC->ADC1.SMPR2 &= ~(7U << 0);
-	ADC->ADC1.SMPR2 |=  (3U << 0);
+	/* Set ADC1 Channel 0 sample time to 480 cycles */
+	ADC->ADC1.SMPR2 &= ~(7U << (0 * 3)); /* Clear SMP0 */
+	ADC->ADC1.SMPR2 |=  (7U << (0 * 3)); /* 111 = 480 cycles */
 
 	/* Turn on ADC1 core power first */
 	ADC->ADC1.CR2 |= (1U << 0); // ADON = 1

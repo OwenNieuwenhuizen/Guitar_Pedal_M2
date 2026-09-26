@@ -63,28 +63,24 @@ int main(void)
     TIM2_SampleClock_Init(SAMPLE_RATE_HZ);
 
     /* 1. Read DR to clear EOC, and clear OVR / STRT in SR */
-    uint32_t dummy_read = ADC->ADC1.DR;
+    ADC->ADC1.DR;
     ADC->ADC1.SR = 0; /* Clear OVR, EOC, STRT */
 
-    uint32_t block_counter = 0;
-
+    uint32_t count = 0;
     while(1) {
         if (adc_frame_ready) {
             adc_frame_ready = 0; // Clear flag
 
-            if (++block_counter >= 50) {
-                block_counter = 0;
+            uint16_t pk_to_pk = audio_pipeline_pk_to_pk(active_processing_buf, BLOCK_SIZE);
 
-                if (active_processing_buf != NULL) {
-                    uint16_t raw_val = active_processing_buf[0];
-                    uint32_t millivolts = ((uint32_t)raw_val * 3300) / 4095;
-
-                    char str_buf[64];
-                    snprintf(str_buf, sizeof(str_buf), "ADC Raw: %u | Volts: %lu.%03luV\r\n",
-                             raw_val, millivolts / 1000, millivolts % 1000);
-                    USART3_WriteStr(str_buf);
-                }
-            }
+			/* Print summary only once every ~100 blocks (~0.5s) */
+			if (++count >= 100) {
+				count = 0;
+				char log_buf[96];
+				snprintf(log_buf, sizeof(log_buf),
+						 "DMA Block -> Pk-Pk: %4u\r\n", pk_to_pk);
+				USART3_WriteStr(log_buf);
+			}
         }
     }
     return 0;
