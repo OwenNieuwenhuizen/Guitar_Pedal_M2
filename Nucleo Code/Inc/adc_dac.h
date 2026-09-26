@@ -11,7 +11,8 @@
 #include "registers.h"
 #include "gpio.h"
 
-void Audio_ADC_DAC_Init(void);
+void Audio_ADC_Init(void);
+void Audio_DAC_Init(void);
 void DAC1_WriteSample(uint16_t sample);
 
 #endif /* ADC_DAC_H_ */

@@ -1,9 +1,9 @@
 ../Src/usart.c:13:6:USART3_Init	16	static
-../Src/usart.c:34:6:USART3_WriteChar	16	static
-../Src/usart.c:39:6:USART3_WriteByte	16	static
-../Src/usart.c:44:6:USART3_WriteStr	16	static
-../Src/usart.c:50:6:USART3_IRQHandler	16	static
-../Src/usart.c:64:9:USART3_ReadByte	16	static
-../Src/usart.c:73:6:DMA1_Stream3_Init	4	static
-../Src/usart.c:81:9:USART3_DMABusy	4	static
-../Src/usart.c:85:6:USART3_TransmitDMA	16	static
+../Src/usart.c:36:6:USART3_WriteChar	16	static
+../Src/usart.c:41:6:USART3_WriteByte	16	static
+../Src/usart.c:47:6:USART3_WriteStr	16	static
+../Src/usart.c:53:6:USART3_IRQHandler	16	static
+../Src/usart.c:70:9:USART3_ReadByte	16	static
+../Src/usart.c:79:6:DMA1_Stream3_Init	4	static
+../Src/usart.c:87:9:USART3_DMABusy	4	static
+../Src/usart.c:91:6:USART3_TransmitDMA	16	static

@@ -30,30 +30,15 @@
 #include "adc_dac.h"
 #include "audio_process.h"
 
-#if !defined(__SOFT_FP__) && defined(__ARM_FP)
-  #warning "FPU is not initialized, but the project is compiling for an FPU. Please initialize the FPU before use."
-#endif
-
 void SystemClock_Init(void);
 void Process_cmd(const char *cmd);
 
 #define SAMPLE_RATE_HZ 48000U
 #define BLOCK_SIZE 256U
-static uint16_t adc_ping_buf[BLOCK_SIZE];
-static uint16_t adc_pong_buf[BLOCK_SIZE];
 static uint16_t dac_ping_buf[BLOCK_SIZE];
 static uint16_t dac_pong_buf[BLOCK_SIZE];
-static volatile uint8_t adc_frame_ready = 0;
 static volatile uint8_t dac_frame_ready = 0;
-static uint16_t *volatile active_processing_buf = NULL;
 static uint16_t *volatile available_output_buf = NULL;
-static AudioPipeline g_pipeline;
-
-void AudioBlock_Ready_Callback(uint16_t *buffer) {
-    /* Hand off the filled inactive buffer to the main execution loop */
-    active_processing_buf = buffer;
-    adc_frame_ready = 1;
-}
 
 void DACBlock_Ready_Callback(uint16_t *buffer) {
     /* The completed inactive DAC buffer is safe for the next DSP result. */
@@ -65,80 +50,28 @@ int main(void)
 {
     SystemClock_Init();
     FPU_Init();
-    Audio_ADC_DAC_Init();
-//    USART3_Init();
-    DMA2_Stream0_ADC_Init(adc_ping_buf, adc_pong_buf, BLOCK_SIZE, AudioBlock_Ready_Callback);
+    USART3_Init();
+    USART3_WriteStr("Beginning DAC Test/r/n");
     for (uint32_t i = 0; i < BLOCK_SIZE; i++) {
         dac_ping_buf[i] = 2048U;
         dac_pong_buf[i] = 2048U;
     }
     DMA1_Stream5_DAC_Init(dac_ping_buf, dac_pong_buf, BLOCK_SIZE, DACBlock_Ready_Callback);
+    Audio_DAC_Init();
     TIM2_SampleClock_Init(SAMPLE_RATE_HZ);
-    audio_pipeline_init(&g_pipeline, SAMPLE_RATE_HZ);
     while(1) {
-    	if (adc_frame_ready && dac_frame_ready) {
-			adc_frame_ready = 0;
+    	if (dac_frame_ready) {
 			dac_frame_ready = 0;
 
 			/* Process 256-sample audio frame in real time */
-			if (active_processing_buf != NULL && available_output_buf != NULL) {
-				audio_pipeline_process_12bit(&g_pipeline, active_processing_buf, available_output_buf, BLOCK_SIZE);
+			if (available_output_buf != NULL) {
+				for (int i=0; i<BLOCK_SIZE; i++) {
+					available_output_buf[i] = 4090;
+				}
 			}
 		}
     }
     return 0;
-
-
-//    snprintf(dma_tx_buf, sizeof(dma_tx_buf),
-//        				"\r\n[DMA TELEMETRY] Core Clock: 216MHz "
-//        				"| System Status: OK\r\n> ");
-//    USART3_DMA1_TIM2_ZeroCPU_Init(dma_tx_buf, sizeof(dma_tx_buf));
-
-//    USART3_WriteStr("---------- LED Commands ----------\r\n");
-//    USART3_WriteStr("------- ON, OFF, and TOGGLE ------\r\n");
-//    USART3_WriteStr("----------------------------------\r\n");
-//    USART3_WriteStr("> ");
-
-//    uint8_t byte;
-//    while (1) {
-//    	while (USART3_ReadByte(&byte)) {
-////    		USART3_WriteChar((char)byte);
-//    		if (byte == '\r' || byte == '\n') {
-//    			rx_buffer[rx_index] = '\0';
-//    			if (rx_index > 0) {
-//    				Process_cmd(rx_buffer);
-//    				rx_index = 0;
-//    			}
-////    			USART3_WriteStr("> ");
-//    		} else if (rx_index < CMD_BUF_SIZE-1) {
-//    			rx_buffer[rx_index++] = (char)byte;
-//    		}
-//    	}
-//    }
-}
-
-void Process_cmd(const char *cmd) {
-	if (strcmp(cmd, "*IDN?") == 0) {
-		USART3_WriteStr("STM32Microelectronics, Nucleo-144, STM32F767ZIx, v1.0\r\n");
-	}
-	else if (strncmp(cmd, "OUTP:LED ", 9) == 0) {
-		const char *param=cmd+9;
-		if (strcmp(param,"1")==0 || strcmp(param,"ON")==0) {
-			GPIO_WritePin(GPIOB, P7, 1);
-		} else if (strcmp(param,"0") == 0 || strcmp(param,"OFF") == 0) {
-			GPIO_WritePin(GPIOB, P7, 0);
-		} else {
-			USART3_WriteStr("ERROR: Invalid Parameter\r\n");
-		}
-	} else if (strcmp(cmd, "MEAS:LED?") == 0) {
-		if (GPIO_ReadPin(GPIOB, P7)) {
-			USART3_WriteStr("1\r\n");
-		} else {
-			USART3_WriteStr("0\r\n");
-		}
-	} else {
-		USART3_WriteStr("UNKNOWN COMMAND\r\n");
-	}
 }
 
 void SystemClock_Init(void) {

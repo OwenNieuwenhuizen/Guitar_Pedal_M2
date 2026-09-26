@@ -1,9 +1,9 @@
 ../Src/usart.c:13:6:USART3_Init	1
-../Src/usart.c:34:6:USART3_WriteChar	2
-../Src/usart.c:39:6:USART3_WriteByte	2
-../Src/usart.c:44:6:USART3_WriteStr	2
-../Src/usart.c:50:6:USART3_IRQHandler	4
-../Src/usart.c:64:9:USART3_ReadByte	2
-../Src/usart.c:73:6:DMA1_Stream3_Init	2
-../Src/usart.c:81:9:USART3_DMABusy	1
-../Src/usart.c:85:6:USART3_TransmitDMA	2
+../Src/usart.c:36:6:USART3_WriteChar	2
+../Src/usart.c:41:6:USART3_WriteByte	2
+../Src/usart.c:47:6:USART3_WriteStr	2
+../Src/usart.c:53:6:USART3_IRQHandler	4
+../Src/usart.c:70:9:USART3_ReadByte	2
+../Src/usart.c:79:6:DMA1_Stream3_Init	2
+../Src/usart.c:87:9:USART3_DMABusy	1
+../Src/usart.c:91:6:USART3_TransmitDMA	2

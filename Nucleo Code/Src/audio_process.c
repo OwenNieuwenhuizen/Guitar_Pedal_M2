@@ -44,3 +44,15 @@ void audio_pipeline_process_12bit(AudioPipeline *pipeline, const uint16_t *in_bu
         out_buf[i] = (uint16_t)((float_out * 2048.0f) + 2048.0f);
     }
 }
+
+uint16_t audio_pipeline_pk_to_pk(const uint16_t *in_buf, uint32_t length) {
+	uint16_t min_sample = 4095;
+	uint16_t max_sample = 0;
+
+	for (uint32_t i = 0; i < length; i++) {
+		if (in_buf[i] < min_sample) min_sample = in_buf[i];
+		if (in_buf[i] > max_sample) max_sample = in_buf[i];
+	}
+
+	return max_sample - min_sample;
+}
